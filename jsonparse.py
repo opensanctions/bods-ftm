@@ -1,7 +1,7 @@
 import gzip
 import orjson
 from pprint import pprint
-
+from ftmstore import get_dataset
 from followthemoney import model
 
 SCHEME_PROPS = {
@@ -38,7 +38,7 @@ SCHEME_PROPS = {
 }
 
 
-def parse_statement(data):
+def parse_statement(bulk, data, index):
     statement_type = data.pop("statementType")
     statement_id = data.pop("statementID")
     countries = set()
@@ -122,17 +122,22 @@ def parse_statement(data):
 
     if len(data):
         pprint({"type": statement_type, "data": data})
+    bulk.put(proxy, fragment=index)
 
 
 def parse_file(file_name):
+    dataset = get_dataset("bods-registry")
+    dataset.delete()
+    bulk = dataset.bulk(size=5000)
     with gzip.open(file_name) as fh:
-        entities = 0
+        index = 0
         while line := fh.readline():
             data = orjson.loads(line)
-            parse_statement(data)
-            entities += 1
-            if entities > 0 and entities % 10000 == 0:
-                print("statements: ", entities)
+            parse_statement(bulk, data, index)
+            index += 1
+            if index > 0 and index % 10000 == 0:
+                print("statements: ", index)
+    bulk.flush()
 
 
 if __name__ == "__main__":
