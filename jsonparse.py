@@ -8,6 +8,7 @@ SCHEME_PROPS = {
     "Not a valid Org-Id scheme, provided for backwards compatibility": "registrationNumber",
     "DK Centrale Virksomhedsregister": "registrationNumber",
     "Danish Central Business Register": "registrationNumber",
+    "AF EITI 2013-2015 beneficial ownership pilot": "alias",
     "CM EITI 2013-2015 beneficial ownership pilot": "alias",
     "GB EITI 2013-2015 beneficial ownership pilot": "alias",
     "ZM EITI 2013-2015 beneficial ownership pilot": "alias",
@@ -25,6 +26,9 @@ SCHEME_PROPS = {
     "SC EITI 2013-2015 beneficial ownership pilot": "alias",
     "NG EITI 2013-2015 beneficial ownership pilot": "alias",
     "MG EITI 2013-2015 beneficial ownership pilot": "alias",
+    "MM EITI 2013-2015 beneficial ownership pilot": "alias",
+    "ML EITI 2013-2015 beneficial ownership pilot": "alias",
+    "KG EITI 2013-2015 beneficial ownership pilot": "alias",
     "EITI Structured Data - Côte d'Ivoire": "alias",
     "UA Edinyy Derzhavnyj Reestr": "registrationNumber",
     "United State Register": "registrationNumber",
@@ -126,7 +130,7 @@ def parse_statement(bulk, data, index):
 
 
 def parse_file(file_name):
-    dataset = get_dataset("bods-registry")
+    dataset = get_dataset("bods-registry", database_uri="sqlite:///data/ftm.store")
     dataset.delete()
     bulk = dataset.bulk(size=5000)
     with gzip.open(file_name) as fh:
