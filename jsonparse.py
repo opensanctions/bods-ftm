@@ -25,6 +25,7 @@ SCHEME_PROPS = {
     "LR EITI 2013-2015 beneficial ownership pilot": "alias",
     "SC EITI 2013-2015 beneficial ownership pilot": "alias",
     "NG EITI 2013-2015 beneficial ownership pilot": "alias",
+    "NO EITI 2013-2015 beneficial ownership pilot": "alias",
     "MG EITI 2013-2015 beneficial ownership pilot": "alias",
     "MM EITI 2013-2015 beneficial ownership pilot": "alias",
     "ML EITI 2013-2015 beneficial ownership pilot": "alias",
