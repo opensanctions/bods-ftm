@@ -1,6 +1,2 @@
-
-followthemoney==2.9.0
-followthemoney-store==1.16.0
 datapatch==0.2.0
-ijson
-orjson
+zavod

@@ -1,4 +1,4 @@
 data/
 .mypy_cache
 .DS_Store
-followthemoney.store
+*.perf

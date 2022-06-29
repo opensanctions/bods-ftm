@@ -1,8 +1,9 @@
 import gzip
 import orjson
+from pathlib import Path
 from pprint import pprint
-from ftmstore import get_dataset
-from followthemoney import model
+from typing import Any, Dict
+from zavod import Zavod, init_context
 
 SCHEME_PROPS = {
     "Not a valid Org-Id scheme, provided for backwards compatibility": "registrationNumber",
@@ -43,7 +44,7 @@ SCHEME_PROPS = {
 }
 
 
-def parse_statement(bulk, data, index):
+def parse_statement(context: Zavod, data: Dict[str, Any]) -> None:
     statement_type = data.pop("statementType")
     statement_id = data.pop("statementID")
     countries = set()
@@ -54,7 +55,7 @@ def parse_statement(bulk, data, index):
             return
 
         assert person_type == "knownPerson", (person_type, data)
-        proxy = model.make_entity("Person")
+        proxy = context.make("Person")
         proxy.add("birthDate", data.pop("birthDate", None))
         for name in data.pop("names", []):
             proxy.add("name", name.pop("fullName"))
@@ -66,7 +67,7 @@ def parse_statement(bulk, data, index):
 
     elif statement_type == "entityStatement":
         entity_type = data.pop("entityType")
-        proxy = model.make_entity("LegalEntity")
+        proxy = context.make("LegalEntity")
         proxy.add("name", data.pop("name", None))
         proxy.add("incorporationDate", data.pop("foundingDate", None))
         proxy.add("dissolutionDate", data.pop("dissolutionDate", None))
@@ -79,7 +80,7 @@ def parse_statement(bulk, data, index):
         proxy.add("jurisdiction", juris_code)
 
     elif statement_type == "ownershipOrControlStatement":
-        proxy = model.make_entity("Ownership")
+        proxy = context.make("Ownership")
         interested_party = data.pop("interestedParty", {})
         proxy.add("owner", interested_party.pop("describedByPersonStatement", None))
         proxy.add("owner", interested_party.pop("describedByEntityStatement", None))
@@ -102,7 +103,7 @@ def parse_statement(bulk, data, index):
             pprint(data)
 
     else:
-        print("UNKNOWN STATEMENT TYPE", statement_type)
+        context.log.warn("Unknown statement type", statement_type)
 
     proxy.id = statement_id
 
@@ -117,34 +118,32 @@ def parse_statement(bulk, data, index):
         scheme = ident.pop("schemeName")
         value = ident.pop("uri", ident.pop("id", None))
         if scheme not in SCHEME_PROPS:
-            print("UNKNOWN SCHEME", repr(scheme), value)
+            context.log.warn("Unknown scheme", scheme=repr(scheme), value=value)
             continue
         if value is None:
-            print("WEIRD IDENT", ident)
+            context.log.warn("Weird identifier", identifier=ident)
         prop = SCHEME_PROPS[scheme]
         if prop is not None:
             proxy.add(prop, value)
 
     if len(data):
         pprint({"type": statement_type, "data": data})
-    bulk.put(proxy, fragment=index)
+
+    context.emit(proxy)
 
 
-def parse_file(file_name):
-    dataset = get_dataset("bods-registry", database_uri="sqlite:///data/ftm.store")
-    dataset.delete()
-    bulk = dataset.bulk(size=5000)
+def parse_file(context: Zavod, file_name: Path):
     with gzip.open(file_name) as fh:
         index = 0
         while line := fh.readline():
             data = orjson.loads(line)
-            parse_statement(bulk, data, index)
+            parse_statement(context, data)
             index += 1
             if index > 0 and index % 10000 == 0:
-                print("statements: ", index)
-    bulk.flush()
+                context.log.info("Statements: %d..." % index)
 
 
 if __name__ == "__main__":
-    fn = "data/statements.latest.jsonl.gz"
-    parse_file(fn)
+    with init_context("openownership", "oo") as context:
+        fn = context.get_resource_path("statements.latest.jsonl.gz")
+        parse_file(context, fn)
