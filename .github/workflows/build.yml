@@ -32,6 +32,7 @@ jobs:
       - name: Fetch and parse the data
         run: |
           make data/fragments.json
+          rm data/statements.latest.jsonl.gz
       - name: Aggregate fragmented entities
         run: |
           mkdir -p data/export
