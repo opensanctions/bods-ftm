@@ -13,8 +13,11 @@ data/fragments.json: data/statements.latest.jsonl.gz
 data/sorted.json: data/fragments.json
 	sort -o data/sorted.json data/fragments.json
 
-data/openownership.json: data/sorted.json
-	ftm sorted-aggregate -i data/sorted.json -o data/openownership.json
+data/export:
+	mkdir -p data/export
+
+data/export/openownership.json: data/export data/sorted.json
+	ftm sorted-aggregate -i data/sorted.json -o data/export/openownership.json
 
 clean:
 	rm -rf data/*
